@@ -3,6 +3,7 @@
 GigDatasets' datasets, in `priv/datasets/`, are copied from R and its packages. Each is listed with
 what was taken, where its data comes from, and the licence it carries; each file's header and each
 dataset's documentation name that licence too, and `dev/regenerate.R` says how each file was made.
+The GPL's texts are `LICENSES/GPL-2.0.txt` and `LICENSES/GPL-3.0.txt`; MIT's is below.
 
 ## ggplot2 4.0.3 — MIT License
 

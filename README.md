@@ -37,8 +37,9 @@ are kept compressed and decoded when asked for.
 The code is MIT; see `LICENSE`. Each dataset carries its source's licence, which its file's header
 and its documentation name: ggplot2's datasets are MIT; R's own (`mtcars`, `faithful`,
 `USArrests`) and rpart's `kyphosis` are GPL-2.0 or GPL-3.0; nlme's `Oxboys` is GPL-2.0 or later;
-and ggplot2movies' `movies` is GPL-3.0. The package lists every licence its datasets carry, and
-`THIRD_PARTY_NOTICES.md` where each comes from.
+and ggplot2movies' `movies` is GPL-3.0. The package lists every licence its datasets carry,
+`LICENSES/` holds the GPL's two texts, and `THIRD_PARTY_NOTICES.md` says where each dataset comes
+from.
 
 ## Regenerating a dataset
 

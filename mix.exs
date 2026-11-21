@@ -25,7 +25,15 @@ defmodule GigDatasets.MixProject do
   defp package do
     [
       licenses: ["MIT", "GPL-2.0-only OR GPL-3.0-only", "GPL-2.0-or-later", "GPL-3.0-only"],
-      files: ["lib", "priv", "mix.exs", "README.md", "LICENSE", "THIRD_PARTY_NOTICES.md"]
+      files: [
+        "lib",
+        "priv",
+        "mix.exs",
+        "README.md",
+        "LICENSE",
+        "LICENSES",
+        "THIRD_PARTY_NOTICES.md"
+      ]
     ]
   end
 
