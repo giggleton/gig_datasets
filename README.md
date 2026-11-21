@@ -1,0 +1,47 @@
+# GigDatasets
+
+Datasets to plot: copies of the tables R, ggplot2 and their packages ship, for the examples in
+[Giggly](https://github.com/giggleton/giggly)'s notebooks and for your own plots.
+
+Each dataset is a keyword list of plain columns, which Giggly, Explorer and Kino all read as a
+table: integers, floats, strings, `Date`s and `nil` for a missing value. A column R holds as a
+factor holds its labels, as a table read from a file would, and the dataset's documentation gives
+R's levels, so you can make the factor yourself where you want R's order.
+
+## Installation
+
+Until it is published, depend on it by path:
+
+```elixir
+def deps do
+  [
+    {:gig_datasets, path: "../gig_datasets"}
+  ]
+end
+```
+
+## Use
+
+```elixir
+GigDatasets.mpg()
+|> Giggly.Plot.new(%{x: :displ, y: :hwy})
+|> Giggly.Plot.geom_point()
+|> Giggly.to_svg()
+```
+
+The datasets are read when the package compiles, so asking for one reads no file; the biggest
+are kept compressed and decoded when asked for.
+
+## Licences
+
+The code is MIT; see `LICENSE`. Each dataset carries its source's licence, which its file's header
+and its documentation name: ggplot2's datasets are MIT; R's own (`mtcars`, `faithful`,
+`USArrests`) and rpart's `kyphosis` are GPL-2.0 or GPL-3.0; nlme's `Oxboys` is GPL-2.0 or later;
+and ggplot2movies' `movies` is GPL-3.0. The package lists every licence its datasets carry, and
+`THIRD_PARTY_NOTICES.md` where each comes from.
+
+## Regenerating a dataset
+
+The files in `priv/datasets` and the fingerprint the tests check them against are written from R's
+own data by `dev/regenerate.R`, whose header gives the command. Only a maintainer changing a
+dataset needs R; the package and its tests read only the committed files.
