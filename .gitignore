@@ -22,3 +22,6 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 gig_datasets-*.tar
 
+# And the package unpacked (built via "mix hex.build --unpack").
+/gig_datasets-*/
+

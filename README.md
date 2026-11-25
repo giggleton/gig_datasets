@@ -10,12 +10,12 @@ R's levels, so you can make the factor yourself where you want R's order.
 
 ## Installation
 
-Until it is published, depend on it by path:
+Add it to your dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:gig_datasets, path: "../gig_datasets"}
+    {:gig_datasets, "~> 0.1.0"}
   ]
 end
 ```
