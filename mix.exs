@@ -33,7 +33,7 @@ defmodule GigDatasets.MixProject do
   # MIT. A test checks this list against the files' headers.
   defp package do
     [
-      licenses: ["MIT", "GPL-2.0-only OR GPL-3.0-only", "GPL-2.0-or-later", "GPL-3.0-only"],
+      licenses: ["MIT", "GPL-2.0-only", "GPL-2.0-or-later", "GPL-3.0-only"],
       links: %{"GitHub" => @source_url},
       files: [
         "lib",
