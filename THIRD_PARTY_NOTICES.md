@@ -1,6 +1,7 @@
 # Third-party notices
 
-GigDatasets' datasets, in `priv/datasets/`, are copied from R and its packages. Each is listed with
+GigDatasets' datasets, in `priv/datasets/`, are copied from R and its packages, but for the map
+outlines, which come from public-domain sources. Each is listed with
 what was taken, where its data comes from, and the licence it carries; each file's header and each
 dataset's documentation name that licence too, and `dev/regenerate.R` says how each file was made.
 The GPL's texts are `LICENSES/GPL-2.0.txt` and `LICENSES/GPL-3.0.txt`; MIT's is below.
@@ -76,3 +77,18 @@ surgery, from J. M. Chambers and T. J. Hastie, Statistical Models in S, Wadswort
 `priv/datasets/movies.csv` holds ggplot2movies' `movies` table, 58,788 films from the Internet
 Movie Database with their lengths, budgets, user ratings and genres. ggplot2movies is licensed
 GPL-3. No code or text of ggplot2movies' is included.
+
+## US Census Bureau — public domain
+
+`priv/datasets/state_map.csv` holds the outlines of the lower 48 US states and the District of
+Columbia from the Bureau's 2024 cartographic boundary file of states at 1:20,000,000,
+`cb_2024_us_state_20m`, a work of the US government and so in the public domain. Its states are
+named in lowercase and its rings laid out as ggplot2's `map_data()` lays them.
+
+## Natural Earth 5.1.1 — public domain
+
+`priv/datasets/world_map.csv` holds every country's outline from Natural Earth's 1:110m Admin 0
+countries, and `priv/datasets/nz_map.csv` New Zealand's main islands from its 1:50m Admin 0
+countries. Natural Earth's map data is in the public domain (naturalearthdata.com). Holes are left
+out, a country inside another's outline is put after it, and the rings are laid out as ggplot2's
+`map_data()` lays them.

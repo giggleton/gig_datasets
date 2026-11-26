@@ -13,7 +13,8 @@ defmodule GigDatasets.MixProject do
       deps: deps(),
       aliases: aliases(),
       description:
-        "Datasets to plot: copies of the tables R, ggplot2 and their packages ship, as plain data.",
+        "Datasets to plot: copies of the tables R, ggplot2 and their packages ship, and map " <>
+          "outlines, as plain data.",
       source_url: @source_url,
       package: package(),
       docs: [main: "GigDatasets", source_ref: "v#{@version}"]

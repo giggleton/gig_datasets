@@ -116,3 +116,21 @@
 "oxboys","age",2,"numeric",234,0,16,"-1","1.0055","-1","1.0055","","d3d36b544e39efef40b7711aab8f304e",FALSE
 "oxboys","height",3,"numeric",234,0,173,"140.5","143.1","126.2","174.8","","f6a53d692898fb183dbc370cdb9c2169",FALSE
 "oxboys","Occasion",4,"ordered",234,0,9,"1","9","1","9","1|2|3|4|5|6|7|8|9","61abfee98314a67e54d3670e46bfe25e",TRUE
+"state_map","long",1,"numeric",11065,0,7031,"-106.623445","-114.799683","-124.725839","-66.949895","","76670cd48eaf93014fe51bf057d58da5",FALSE
+"state_map","lat",2,"numeric",11065,0,7026,"31.914034","32.593621","24.498131","49.384358","","9b3a55103a6bee938cea0ece17634f52",FALSE
+"state_map","group",3,"integer",11065,0,73,"1","73","1","73","","bebfcbda205e3136d63a3d1a6b1ffa5b",FALSE
+"state_map","order",4,"integer",11065,0,11065,"1","11065","1","11065","","1aaad959336314d77705c0abd2ca96da",FALSE
+"state_map","region",5,"character",11065,0,49,"texas","arizona","alabama","wyoming","","ffa85e9ac84751f4af0c2808b5b3a470",FALSE
+"state_map","subregion",6,"character",11065,11065,0,NA,NA,"NA","NA","","bb022ab25061923d2b36d97634cee39e",FALSE
+"world_map","long",1,"numeric",10642,0,7493,"180","28.978262566857243","-180","180.00000000000006","","114bf0e96f5af4b734de82f2278c17f8",FALSE
+"world_map","lat",2,"numeric",10642,0,7372,"-16.067132663642447","-28.955596612261711","-90","83.645130000000009","","3ea32d02b7c35d19a1444d18ad54fb42",FALSE
+"world_map","group",3,"integer",10642,0,288,"1","288","1","288","","19968d69a4e39911ed5e718fd8f6f79c",FALSE
+"world_map","order",4,"integer",10642,0,10642,"1","10642","1","10642","","22b1b329213c01d34e8cf7fe87dd20f1",FALSE
+"world_map","region",5,"character",10642,0,177,"Fiji","Lesotho","Afghanistan","eSwatini","","05a7fdd6d9a263d461fc7c71a6598bb0",FALSE
+"world_map","subregion",6,"character",10642,10642,0,NA,NA,"NA","NA","","5904779c17f560a0eef6fa3ae9d5ddd0",FALSE
+"nz_map","long",1,"numeric",687,0,675,"173.11533203125003","173.26943359375002","166.47763671875003","178.53623046875003","","380caaf026b0877ab844352d4571e655",FALSE
+"nz_map","lat",2,"numeric",687,0,680,"-41.279296875","-34.934765625000011","-47.263671875","-34.429101562500009","","8df9a5164554431776f3ad06ae8c2743",FALSE
+"nz_map","group",3,"integer",687,0,7,"1","7","1","7","","58aa122d95333f0401641516d1c1aa3f",FALSE
+"nz_map","order",4,"integer",687,0,687,"1","687","1","687","","70b0c8e17ce1da20d33c2b7d6e0bbf65",FALSE
+"nz_map","region",5,"character",687,0,1,"New Zealand","New Zealand","New Zealand","New Zealand","","cb6d050c770b035c79529df0fc9aaa7d",FALSE
+"nz_map","subregion",6,"character",687,687,0,NA,NA,"NA","NA","","c63397d6b20bd4b731c4b1f9b82d0ae9",FALSE

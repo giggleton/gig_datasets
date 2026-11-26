@@ -120,8 +120,12 @@ defmodule GigDatasetsTest do
       end
 
     # Hex takes single SPDX identifiers only, so a dataset under either of two licences
-    # ("GPL-2.0-only OR GPL-3.0-only") is listed in the package under each.
-    identifiers = Enum.flat_map(licences, fn licence -> String.split(licence, " OR ") end)
+    # ("GPL-2.0-only OR GPL-3.0-only") is listed in the package under each; a dataset in the public
+    # domain carries no licence, so none is listed for it.
+    identifiers =
+      licences
+      |> Enum.reject(fn licence -> licence == "public domain" end)
+      |> Enum.flat_map(fn licence -> String.split(licence, " OR ") end)
 
     listed = Mix.Project.config()[:package][:licenses]
     assert MapSet.new(identifiers) == MapSet.new(listed)

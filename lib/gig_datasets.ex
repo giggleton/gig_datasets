@@ -1,7 +1,8 @@
 defmodule GigDatasets do
   @moduledoc """
-  Datasets to plot: copies of tables R and its packages ship, for the examples in Giggly's
-  notebooks and for your own plots.
+  Datasets to plot: copies of tables R and its packages ship, and map outlines from public-domain
+  sources laid out as ggplot2's `map_data()` lays them, for the examples in Giggly's notebooks and
+  for your own plots.
 
   Each dataset is a keyword list of columns, in the dataset's own order, which
   `Giggly.Plot.new/2` reads as a table, as do Explorer's `DataFrame.new/1` and Kino's data table.
@@ -187,6 +188,17 @@ defmodule GigDatasets do
     Occasion: :string
   ]
 
+  # How each map's outline columns are read, as ggplot2's `map_data()` lays them out; the file's
+  # header gives their order. Every subregion is missing, read as a string column of `nil`s.
+  @map_types [
+    long: :float,
+    lat: :float,
+    group: :integer,
+    order: :integer,
+    region: :string,
+    subregion: :string
+  ]
+
   # The datasets, each read from its file once, at compile time, so asking for one does no IO.
   @types [
     mtcars: @mtcars_types,
@@ -204,7 +216,10 @@ defmodule GigDatasets do
     movies: @movies_types,
     usarrests: @usarrests_types,
     kyphosis: @kyphosis_types,
-    oxboys: @oxboys_types
+    oxboys: @oxboys_types,
+    state_map: @map_types,
+    world_map: @map_types,
+    nz_map: @map_types
   ]
 
   @directory Path.expand("../priv/datasets", __DIR__)
@@ -272,7 +287,8 @@ defmodule GigDatasets do
               :luv_colours,
               :usarrests,
               :kyphosis,
-              :oxboys
+              :oxboys,
+              :nz_map
             ])
   @diamonds @parsed
             |> Map.fetch!(:diamonds)
@@ -283,6 +299,15 @@ defmodule GigDatasets do
   @movies @parsed
           |> Map.fetch!(:movies)
           |> :erlang.term_to_binary(compressed: 9)
+
+  # The US states' and the world's outlines, some eleven thousand points each, are kept compressed
+  # too, as txhousing is.
+  @state_map @parsed
+             |> Map.fetch!(:state_map)
+             |> :erlang.term_to_binary(compressed: 9)
+  @world_map @parsed
+             |> Map.fetch!(:world_map)
+             |> :erlang.term_to_binary(compressed: 9)
 
   @doc """
   R's `mtcars`: fuel consumption and ten aspects of design and performance for 32 cars (1973-74
@@ -734,4 +759,70 @@ defmodule GigDatasets do
   """
   @spec oxboys() :: [{atom(), [String.t() | float()]}]
   def oxboys, do: Map.fetch!(@datasets, :oxboys)
+
+  @doc """
+  The outlines of the lower 48 US states and the District of Columbia, laid out as ggplot2's
+  `map_data("state")` lays a map out, for `Giggly.Plot.geom_map/3` and `annotation_map/3`, from the
+  US Census Bureau's 2024 cartographic boundary file of states at 1:20,000,000.
+
+  Each row is a point of a state's outline: `long` and `lat`, in degrees (NAD83); `group`, its
+  ring, numbered across the map, each ring closed by its first point again; `order`, the point's
+  place across the map; `region`, the state, named in lowercase as R's `maps` names it, so
+  `"new york"`, which joins to `usarrests/0`'s states once they are lowercased; and `subregion`,
+  `nil`. A state of several pieces, such as Michigan, has a ring for each. It is kept compressed
+  and decoded each time it is asked for, so bind it once.
+
+  Copied from the US Census Bureau's file, a work of the US government; licence: public domain.
+
+      iex> states = GigDatasets.state_map()
+      iex> Keyword.keys(states)
+      [:long, :lat, :group, :order, :region, :subregion]
+      iex> states |> Keyword.fetch!(:region) |> Enum.uniq() |> length()
+      49
+  """
+  @spec state_map() :: [{atom(), [String.t() | number() | nil]}]
+  def state_map, do: :erlang.binary_to_term(@state_map)
+
+  @doc """
+  The outlines of every country, laid out as ggplot2's `map_data("world")` lays a map out, for
+  `Giggly.Plot.geom_map/3` and `annotation_map/3`, from Natural Earth 5.1.1's 1:110m Admin 0
+  countries.
+
+  Each row is a point of a country's outline, its columns `state_map/0`'s: `long` and `lat`, in
+  degrees (WGS84); `group`, its ring, numbered across the map, each closed by its first point
+  again; `order`, the point's place across the map; `region`, the country, by Natural Earth's
+  name, such as `"United States of America"`; and `subregion`, `nil`. A country inside another's
+  outline, such as Lesotho in South Africa's, comes after it, so it is drawn over it, and holes are
+  left out, as regions are drawn without them. It is kept compressed and decoded each time it is
+  asked for, so bind it once.
+
+  Copied from Natural Earth's public-domain map data; licence: public domain.
+
+      iex> world = GigDatasets.world_map()
+      iex> world |> Keyword.fetch!(:region) |> Enum.uniq() |> length()
+      177
+      iex> world |> Keyword.fetch!(:region) |> List.last()
+      "Lesotho"
+  """
+  @spec world_map() :: [{atom(), [String.t() | number() | nil]}]
+  def world_map, do: :erlang.binary_to_term(@world_map)
+
+  @doc """
+  The outlines of New Zealand's main islands, laid out as ggplot2's `map_data("nz")` lays a map
+  out, for `Giggly.Plot.geom_map/3` and `annotation_map/3`, from Natural Earth 5.1.1's 1:50m Admin
+  0 countries: the islands inside 165 to 179 degrees east and 48 to 34 degrees south, so not the
+  Chatham, Auckland or Campbell islands, nor Tokelau.
+
+  Each row is a point of an island's outline, its columns `state_map/0`'s: `long` and `lat`, in
+  degrees (WGS84); `group`, its ring, one per island; `order`; `region`, `"New Zealand"`; and
+  `subregion`, `nil`.
+
+  Copied from Natural Earth's public-domain map data; licence: public domain.
+
+      iex> nz = GigDatasets.nz_map()
+      iex> nz |> Keyword.fetch!(:group) |> Enum.uniq() |> length()
+      7
+  """
+  @spec nz_map() :: [{atom(), [String.t() | number() | nil]}]
+  def nz_map, do: Map.fetch!(@datasets, :nz_map)
 end
