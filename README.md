@@ -16,7 +16,7 @@ Add it to your dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:gig_datasets, "~> 0.1.0"}
+    {:gig_datasets, "~> 0.2.0"}
   ]
 end
 ```
