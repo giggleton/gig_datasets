@@ -40,12 +40,12 @@ defmodule GigDatasetsTest do
         {name, values} = Enum.at(table, String.to_integer(position) - 1)
         present = Enum.reject(values, &is_nil/1)
         read = fn text -> read(text, class) end
+        {found_first, found_last, found_least, found_greatest} = ends(values, present, class)
 
         actual =
           {Atom.to_string(name), length(values), Enum.count(values, &is_nil/1),
            length(Enum.uniq(present)), Enum.all?(present, fn value -> typed?(value, class) end),
-           List.first(values), List.last(values), least(present, class), greatest(present, class),
-           digest(values, class)}
+           found_first, found_last, found_least, found_greatest, digest(values, class)}
 
         expected =
           {column, String.to_integer(rows), String.to_integer(missing),
@@ -142,18 +142,40 @@ defmodule GigDatasetsTest do
 
   defp read(text, _text_class), do: text
 
+  # A column's first and last values and its least and greatest; a geometry column's first and last
+  # are its geometries' types, and it has no least or greatest, shapes having no order.
+  defp ends(values, _present, "geojson") do
+    {List.first(values)["type"], List.last(values)["type"], nil, nil}
+  end
+
+  defp ends(values, present, class) do
+    {List.first(values), List.last(values), least(present, class), greatest(present, class)}
+  end
+
   defp typed?(value, "integer"), do: is_integer(value)
   defp typed?(value, "numeric"), do: is_float(value)
   defp typed?(value, "Date"), do: is_struct(value, Date)
+
+  defp typed?(value, "geojson"),
+    do: is_map_key(value, "type") and is_map_key(value, "coordinates")
+
   defp typed?(value, _text_class), do: is_binary(value)
 
   # The MD5 of every value of a column as dev/regenerate.R's digest() works it out: a missing value
   # zero or empty, each a big-endian double, a big-endian 32-bit integer (a date its days since
-  # 1970-01-01) or UTF-8 text, texts joined by the unit separator.
+  # 1970-01-01) or UTF-8 text, texts joined by the unit separator; a geometry column's, every
+  # coordinate of every geometry in order, each a big-endian double.
   defp digest(values, class), do: Base.encode16(:erlang.md5(bytes(values, class)), case: :lower)
 
   defp bytes(values, "numeric"),
     do: for(value <- values, into: <<>>, do: <<value || 0.0::float-64-big>>)
+
+  defp bytes(values, "geojson") do
+    for value <- values,
+        number <- List.flatten(value["coordinates"]),
+        into: <<>>,
+        do: <<number::float-64-big>>
+  end
 
   defp bytes(values, "integer"),
     do: for(value <- values, into: <<>>, do: <<value || 0::signed-32-big>>)

@@ -134,3 +134,18 @@
 "nz_map","order",4,"integer",687,0,687,"1","687","1","687","","70b0c8e17ce1da20d33c2b7d6e0bbf65",FALSE
 "nz_map","region",5,"character",687,0,1,"New Zealand","New Zealand","New Zealand","New Zealand","","cb6d050c770b035c79529df0fc9aaa7d",FALSE
 "nz_map","subregion",6,"character",687,687,0,NA,NA,"NA","NA","","c63397d6b20bd4b731c4b1f9b82d0ae9",FALSE
+"nc","AREA",1,"numeric",100,0,77,"0.114","0.212","0.042","0.241","","1e22f6ac076e3f42d910efbfaad3ae55",FALSE
+"nc","PERIMETER",2,"numeric",100,0,96,"1.442","2.024","0.999","3.64","","40023dba52dc4ef8b626af42bdcdafcc",FALSE
+"nc","CNTY_",3,"numeric",100,0,100,"1825","2241","1825","2241","","167d49790979167eb5d7e76020d997c1",FALSE
+"nc","CNTY_ID",4,"numeric",100,0,100,"1825","2241","1825","2241","","167d49790979167eb5d7e76020d997c1",FALSE
+"nc","NAME",5,"character",100,0,100,"Ashe","Brunswick","Alamance","Yancey","","8c54ee1213615f8b122ebf6660ab5935",FALSE
+"nc","FIPS",6,"character",100,0,100,"37009","37019","37001","37199","","0f1cf14836e9d65bf1f451d6db1b5cb0",FALSE
+"nc","FIPSNO",7,"numeric",100,0,100,"37009","37019","37001","37199","","4ab5336b83366f523316c9b8e96d9832",FALSE
+"nc","CRESS_ID",8,"integer",100,0,100,"5","10","1","100","","469739b0c19c0ca43fd85f24a4005172",FALSE
+"nc","BIR74",9,"numeric",100,0,100,"1091","2181","248","21588","","0f666e4c5bc38218dcc19a7b88ddfb1d",FALSE
+"nc","SID74",10,"numeric",100,0,23,"1","5","0","44","","f14087b0a0c6e447bad530e2e155db6b",FALSE
+"nc","NWBIR74",11,"numeric",100,0,93,"10","659","1","8027","","8776a12b901c8a0a6df08a9b46bff8f8",FALSE
+"nc","BIR79",12,"numeric",100,0,100,"1364","2655","319","30757","","8a1917bc4d65b6f46e3a33b55b7a6452",FALSE
+"nc","SID79",13,"numeric",100,0,28,"0","6","0","57","","617dd2e03d82878b0aeb907de398dfb0",FALSE
+"nc","NWBIR79",14,"numeric",100,0,98,"19","841","3","11631","","f32a4169a621094b5997b465f111fd78",FALSE
+"nc","geometry",15,"geojson",100,0,100,"MultiPolygon","MultiPolygon","NA","NA","","a433aa133b0b44b797d6858cd3b51521",FALSE

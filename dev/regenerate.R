@@ -110,6 +110,46 @@ nz_outlines <- function() {
   outlines(st_sfc(st_multipolygon(main), crs = st_crs(countries)), "New Zealand")
 }
 
+# North Carolina's counties, sf's own nc.shp, carried from NAD27 into WGS 84, as every GeoJSON
+# geometry is, through the transformation PROJ picks: without the NADCON grids, which the image
+# does not install, a Helmert shift accurate to about 8 m. Each geometry is written as GeoJSON
+# text, a classed column the fingerprint reads apart (geojson_digest()).
+nc_counties <- function() {
+  counties <- st_transform(
+    st_read(system.file("shape", "nc.shp", package = "sf"), quiet = TRUE),
+    4326
+  )
+  table <- st_drop_geometry(counties)
+  table$geometry <- structure(
+    vapply(st_geometry(counties), geojson, character(1), USE.NAMES = FALSE),
+    class = c("geojson", "character")
+  )
+  table
+}
+
+# A multipolygon as GeoJSON writes one, each number in 17 digits, a whole one with ".0", so every
+# coordinate reads back as the double R holds.
+geojson <- function(geometry) {
+  number <- function(values) {
+    text <- sprintf("%.17g", values)
+    ifelse(grepl("[.e]", text), text, paste0(text, ".0"))
+  }
+  ring <- function(points) {
+    paste0("[", paste0("[", number(points[, 1]), ",", number(points[, 2]), "]", collapse = ","),
+           "]")
+  }
+  polygon <- function(rings) paste0("[", paste(vapply(rings, ring, ""), collapse = ","), "]")
+  paste0('{"type":"MultiPolygon","coordinates":[',
+         paste(vapply(unclass(geometry), polygon, ""), collapse = ","), "]}")
+}
+
+# The MD5 of every coordinate of a column of GeoJSON text, in the order the text gives them, each a
+# big-endian double, as the test reads them from the geometries.
+geojson_digest <- function(values) {
+  numbers <- as.numeric(unlist(regmatches(values, gregexpr("-?[0-9][0-9.e+-]*", values))))
+  unname(tools::md5sum(bytes = writeBin(numbers, raw(), size = 8, endian = "big")))
+}
+
 datasets <- list(
   list(
     name = "mtcars",
@@ -406,6 +446,24 @@ datasets <- list(
       "numbered across the map, each closed by its first point again); order (the point's place",
       "across the map); region (\"New Zealand\"); subregion (NA)."
     )
+  ),
+  list(
+    name = "nc",
+    data = nc_counties,
+    source = "sf 1.1.3's nc.shp, carried into WGS 84 by PROJ 9.8.1",
+    licence = "MIT",
+    about = c(
+      "nc: the 100 counties of North Carolina, with their births and sudden infant deaths in",
+      "1974-78 and 1979-84, as sf's nc.shp holds them, for geom_sf() and its kin. sf reads it",
+      "from a shapefile in NAD27 (EPSG 4267); here its outlines are carried into WGS 84 (EPSG",
+      "4326), as every GeoJSON geometry is, by a Helmert shift accurate to about 8 m.",
+      "",
+      "Columns: AREA and PERIMETER (in the shapefile's units); CNTY_ and CNTY_ID (county",
+      "numbers); NAME; FIPS (text) and FIPSNO (its number); CRESS_ID (a third county number);",
+      "BIR74, SID74 and NWBIR74 (births, sudden infant deaths and non-white births, 1974-78);",
+      "BIR79, SID79 and NWBIR79 (the same, 1979-84); geometry (the county's outline, a GeoJSON",
+      "MultiPolygon)."
+    )
   )
 )
 
@@ -498,6 +556,19 @@ for (dataset in datasets) {
       sort(present)
     }
     ends <- function(at) if (length(sorted)) written(sorted[at]) else "NA"
+    # A geometry column is summed up by its geometries' types and its coordinates' digest, no
+    # order among shapes to give it a least or greatest.
+    if (inherits(values, "geojson")) {
+      type <- function(text) sub('^\\{"type":"([A-Za-z]+)".*', "\\1", text)
+      fingerprint[[length(fingerprint) + 1]] <- data.frame(
+        dataset = dataset$name, column = names(data)[index], position = index,
+        class = "geojson", rows = nrow(data), missing = sum(is.na(values)),
+        distinct = length(unique(present)), first = type(values[1]),
+        last = type(values[length(values)]), least = "NA", greatest = "NA", levels = "",
+        digest = geojson_digest(values), ordered = FALSE
+      )
+      next
+    }
     fingerprint[[length(fingerprint) + 1]] <- data.frame(
       dataset = dataset$name,
       column = names(data)[index],

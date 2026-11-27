@@ -40,7 +40,7 @@ and its documentation name: ggplot2's datasets are MIT; R's own (`mtcars`, `fait
 `USArrests`) and rpart's `kyphosis` are GPL-2.0 or GPL-3.0; nlme's `Oxboys` is GPL-2.0 or later;
 ggplot2movies' `movies` is GPL-3.0; and the map outlines (`state_map`, from the US Census Bureau,
 and `world_map` and `nz_map`, from Natural Earth) are in the public domain, which needs no licence
-listed. The package lists every licence its datasets carry,
+listed; sf's `nc`, North Carolina's counties, is MIT. The package lists every licence its datasets carry,
 `LICENSES/` holds the GPL's two texts, and `THIRD_PARTY_NOTICES.md` says where each dataset comes
 from.
 

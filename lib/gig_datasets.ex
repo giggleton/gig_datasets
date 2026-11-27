@@ -188,6 +188,27 @@ defmodule GigDatasets do
     Occasion: :string
   ]
 
+  # How each of nc's columns is read; the file's header gives their order. R stores CRESS_ID as an
+  # integer and every other number as a double, and its geometry is GeoJSON text, read as the map
+  # `JSON.decode!/1` makes of it.
+  @nc_types [
+    AREA: :float,
+    PERIMETER: :float,
+    CNTY_: :float,
+    CNTY_ID: :float,
+    NAME: :string,
+    FIPS: :string,
+    FIPSNO: :float,
+    CRESS_ID: :integer,
+    BIR74: :float,
+    SID74: :float,
+    NWBIR74: :float,
+    BIR79: :float,
+    SID79: :float,
+    NWBIR79: :float,
+    geometry: :geojson
+  ]
+
   # How each map's outline columns are read, as ggplot2's `map_data()` lays them out; the file's
   # header gives their order. Every subregion is missing, read as a string column of `nil`s.
   @map_types [
@@ -219,7 +240,8 @@ defmodule GigDatasets do
     oxboys: @oxboys_types,
     state_map: @map_types,
     world_map: @map_types,
-    nz_map: @map_types
+    nz_map: @map_types,
+    nc: @nc_types
   ]
 
   @directory Path.expand("../priv/datasets", __DIR__)
@@ -245,6 +267,9 @@ defmodule GigDatasets do
 
     value, :date ->
       Date.from_iso8601!(value)
+
+    value, :geojson ->
+      JSON.decode!(value)
   end
 
   # Each dataset's columns, its file's comment lines skipped: each named by its header, an atom its
@@ -288,7 +313,8 @@ defmodule GigDatasets do
               :usarrests,
               :kyphosis,
               :oxboys,
-              :nz_map
+              :nz_map,
+              :nc
             ])
   @diamonds @parsed
             |> Map.fetch!(:diamonds)
@@ -825,4 +851,35 @@ defmodule GigDatasets do
   """
   @spec nz_map() :: [{atom(), [String.t() | number() | nil]}]
   def nz_map, do: Map.fetch!(@datasets, :nz_map)
+
+  @doc """
+  sf's `nc`: the 100 counties of North Carolina, with their births and sudden infant deaths in
+  1974-78 and 1979-84, as the `nc.shp` shapefile the sf package ships holds them, for
+  `Giggly.Plot.geom_sf/3` and its kin. A row is a county; every number is a float but
+  `CRESS_ID`, an integer.
+
+  The columns: `AREA` and `PERIMETER`, in the shapefile's units; `CNTY_` and `CNTY_ID`, county
+  numbers; `NAME`; `FIPS`, the county's code as text, and `FIPSNO`, as a number; `CRESS_ID`, a
+  third county number; `BIR74`, `SID74` and `NWBIR74`, births, sudden infant deaths and
+  non-white births in 1974-78; `BIR79`, `SID79` and `NWBIR79`, the same in 1979-84; and
+  `geometry`, the county's outline, a GeoJSON MultiPolygon as `JSON.decode!/1` gives one,
+  `%{"type" => "MultiPolygon", "coordinates" => [...]}`, in degrees of longitude and latitude.
+
+  sf reads the shapefile in NAD27 (EPSG 4267); here the outlines are carried into WGS 84 (EPSG
+  4326), as every GeoJSON geometry is, by PROJ's Helmert shift, accurate to about 8 m, so they lie
+  a few metres from sf's.
+
+  Copied from sf 1.1.3's nc.shp, carried into WGS 84 by PROJ 9.8.1; licence: MIT.
+
+      iex> nc = GigDatasets.nc()
+      iex> Keyword.keys(nc)
+      [:AREA, :PERIMETER, :CNTY_, :CNTY_ID, :NAME, :FIPS, :FIPSNO, :CRESS_ID, :BIR74, :SID74,
+       :NWBIR74, :BIR79, :SID79, :NWBIR79, :geometry]
+      iex> nc |> Keyword.fetch!(:NAME) |> Enum.take(3)
+      ["Ashe", "Alleghany", "Surry"]
+      iex> nc |> Keyword.fetch!(:geometry) |> hd() |> Map.fetch!("type")
+      "MultiPolygon"
+  """
+  @spec nc() :: [{atom(), [String.t() | number() | map()]}]
+  def nc, do: Map.fetch!(@datasets, :nc)
 end
