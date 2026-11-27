@@ -25,3 +25,6 @@ gig_datasets-*.tar
 # And the package unpacked (built via "mix hex.build --unpack").
 /gig_datasets-*/
 
+
+# The map outlines dev/regenerate.R reads, downloaded by hand from the URLs its header gives.
+/dev/sources/

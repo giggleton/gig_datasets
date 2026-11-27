@@ -6,7 +6,14 @@
 #   docker run --rm --user "$(id -u):$(id -g)" -v "$PWD":/work -w /work gig-datasets-r \
 #     Rscript dev/regenerate.R
 #
-# The image is Giggly's R image with ggplot2movies added (dev/Dockerfile).
+# The image is Giggly's R image with sf, with ggplot2movies added (dev/Dockerfile).
+#
+# The map outlines (state_map, world_map, nz_map) are read from public-domain files not committed:
+# download and unzip each into dev/sources/, keeping the zip's name as the directory's:
+#
+#   https://www2.census.gov/geo/tiger/GENZ2024/shp/cb_2024_us_state_20m.zip
+#   https://naciscdn.org/naturalearth/110m/cultural/ne_110m_admin_0_countries.zip
+#   https://naciscdn.org/naturalearth/50m/cultural/ne_50m_admin_0_countries.zip
 #
 # Nothing else needs R: the files and the fingerprint are committed, and the package and its tests
 # read only them.
@@ -22,6 +29,126 @@
 # (digest() below says how), and whether a factor's levels are ordered.
 
 library(ggplot2)
+library(sf)
+
+# Outlines are cut and compared on the plane, in degrees, as map_data() holds them.
+sf_use_s2(FALSE)
+
+# A shapefile of dev/sources/, its directory named as the zip it came from.
+shapes <- function(name) {
+  st_read(file.path("dev", "sources", name, paste0(name, ".shp")), quiet = TRUE)
+}
+
+# The outer rings of each region's polygons, a hole dropped, as geom_map() draws no holes.
+outer_rings <- function(geometry) {
+  parts <- if (inherits(geometry, "MULTIPOLYGON")) unclass(geometry) else list(unclass(geometry))
+  lapply(parts, function(part) part[[1]])
+}
+
+# The regions in the order they are drawn: their own, but each lying inside another's outline,
+# such as a country in another's hole, after it, so it is drawn over it and shows. A region is
+# inside another when that one's rings, filled, cover 99% of its area, measured on the plane in
+# square degrees, which is enough to tell.
+drawn_order <- function(geometries) {
+  geometries <- st_set_crs(geometries, NA)
+  filled <- st_sfc(lapply(geometries, function(geometry) {
+    st_multipolygon(lapply(outer_rings(geometry), function(ring) list(ring)))
+  }))
+  areas <- as.numeric(st_area(geometries))
+  depth <- vapply(seq_along(geometries), function(index) {
+    others <- setdiff(st_intersects(geometries[index], filled)[[1]], index)
+    sum(vapply(others, function(other) {
+      shared <- st_area(st_intersection(geometries[index], filled[other]))
+      length(shared) > 0 && sum(as.numeric(shared)) / areas[index] > 0.99
+    }, logical(1)))
+  }, integer(1))
+  order(depth)
+}
+
+# A map as ggplot2's map_data() lays one out: a row per point of each ring's outline, in order,
+# the ring closed by its first point again; its longitude and latitude; its ring, numbered from 1
+# across the map; its place, numbered from 1 across the map; and its region; subregion is NA.
+outlines <- function(geometries, regions) {
+  rows <- list()
+  ring_number <- 0L
+  for (index in drawn_order(geometries)) {
+    for (ring in outer_rings(geometries[[index]])) {
+      ring_number <- ring_number + 1L
+      rows[[length(rows) + 1]] <- data.frame(
+        long = ring[, 1], lat = ring[, 2], group = ring_number, region = regions[index]
+      )
+    }
+  }
+  out <- do.call(rbind, rows)
+  data.frame(long = out$long, lat = out$lat, group = out$group, order = seq_len(nrow(out)),
+             region = out$region, subregion = NA_character_)
+}
+
+# The lower 48 states and the District of Columbia, as maps' "state" database holds them, named
+# in lowercase as it names them.
+state_outlines <- function() {
+  states <- shapes("cb_2024_us_state_20m")
+  states <- states[!states$STUSPS %in% c("AK", "HI", "PR"), ]
+  outlines(st_geometry(states), tolower(states$NAME))
+}
+
+# Every country, by Natural Earth's NAME.
+world_outlines <- function() {
+  countries <- shapes("ne_110m_admin_0_countries")
+  outlines(st_geometry(countries), countries$NAME)
+}
+
+# New Zealand's main islands, those inside 165 to 179 degrees east and 48 to 34 degrees south, as
+# maps' "nz" database holds them, without the Chatham, Auckland and Campbell islands and Tokelau.
+nz_outlines <- function() {
+  countries <- shapes("ne_50m_admin_0_countries")
+  new_zealand <- st_geometry(countries[countries$NAME == "New Zealand", ])[[1]]
+  main <- Filter(function(part) {
+    ring <- part[[1]]
+    all(ring[, 1] >= 165 & ring[, 1] <= 179 & ring[, 2] >= -48 & ring[, 2] <= -34)
+  }, unclass(new_zealand))
+  outlines(st_sfc(st_multipolygon(main), crs = st_crs(countries)), "New Zealand")
+}
+
+# North Carolina's counties, sf's own nc.shp, carried from NAD27 into WGS 84, as every GeoJSON
+# geometry is, through the transformation PROJ picks: without the NADCON grids, which the image
+# does not install, a Helmert shift accurate to about 8 m. Each geometry is written as GeoJSON
+# text, a classed column the fingerprint reads apart (geojson_digest()).
+nc_counties <- function() {
+  counties <- st_transform(
+    st_read(system.file("shape", "nc.shp", package = "sf"), quiet = TRUE),
+    4326
+  )
+  table <- st_drop_geometry(counties)
+  table$geometry <- structure(
+    vapply(st_geometry(counties), geojson, character(1), USE.NAMES = FALSE),
+    class = c("geojson", "character")
+  )
+  table
+}
+
+# A multipolygon as GeoJSON writes one, each number in 17 digits, a whole one with ".0", so every
+# coordinate reads back as the double R holds.
+geojson <- function(geometry) {
+  number <- function(values) {
+    text <- sprintf("%.17g", values)
+    ifelse(grepl("[.e]", text), text, paste0(text, ".0"))
+  }
+  ring <- function(points) {
+    paste0("[", paste0("[", number(points[, 1]), ",", number(points[, 2]), "]", collapse = ","),
+           "]")
+  }
+  polygon <- function(rings) paste0("[", paste(vapply(rings, ring, ""), collapse = ","), "]")
+  paste0('{"type":"MultiPolygon","coordinates":[',
+         paste(vapply(unclass(geometry), polygon, ""), collapse = ","), "]}")
+}
+
+# The MD5 of every coordinate of a column of GeoJSON text, in the order the text gives them, each a
+# big-endian double, as the test reads them from the geometries.
+geojson_digest <- function(values) {
+  numbers <- as.numeric(unlist(regmatches(values, gregexpr("-?[0-9][0-9.e+-]*", values))))
+  unname(tools::md5sum(bytes = writeBin(numbers, raw(), size = 8, endian = "big")))
+}
 
 datasets <- list(
   list(
@@ -265,6 +392,78 @@ datasets <- list(
       "126.2-174.8); Occasion (the measurement, 1 to 9). Subject and Occasion are ordered factors in",
       "R; here they are their labels. R stores age and height as doubles."
     )
+  ),
+  list(
+    name = "state_map",
+    data = state_outlines,
+    exact = TRUE,
+    source = "the US Census Bureau's 2024 cartographic boundary file of states at 1:20,000,000",
+    licence = "public domain",
+    about = c(
+      "state_map: the outlines of the lower 48 US states and the District of Columbia, as ggplot2's",
+      "map_data(\"state\") lays a map out, for geom_map() and annotation_map(). From",
+      "https://www2.census.gov/geo/tiger/GENZ2024/shp/cb_2024_us_state_20m.zip, a work of the US",
+      "government.",
+      "",
+      "Columns: long and lat (a point of a ring's outline, in degrees, NAD83); group (the ring,",
+      "numbered across the map, each closed by its first point again); order (the point's place",
+      "across the map); region (the state, in lowercase, as maps names it); subregion (NA)."
+    )
+  ),
+  list(
+    name = "world_map",
+    data = world_outlines,
+    exact = TRUE,
+    source = "Natural Earth 5.1.1's 1:110m Admin 0 countries",
+    licence = "public domain",
+    about = c(
+      "world_map: the outlines of every country, as ggplot2's map_data(\"world\") lays a map out,",
+      "for geom_map() and annotation_map(). From",
+      "https://naciscdn.org/naturalearth/110m/cultural/ne_110m_admin_0_countries.zip, Natural",
+      "Earth's public-domain map data.",
+      "",
+      "Columns: long and lat (a point of a ring's outline, in degrees, WGS84); group (the ring,",
+      "numbered across the map, each closed by its first point again); order (the point's place",
+      "across the map); region (the country, by Natural Earth's name); subregion (NA). A country",
+      "inside another's outline, such as Lesotho in South Africa's, comes after it, and holes are",
+      "left out."
+    )
+  ),
+  list(
+    name = "nz_map",
+    data = nz_outlines,
+    exact = TRUE,
+    source = "Natural Earth 5.1.1's 1:50m Admin 0 countries",
+    licence = "public domain",
+    about = c(
+      "nz_map: the outlines of New Zealand's main islands, as ggplot2's map_data(\"nz\") lays a",
+      "map out, for geom_map() and annotation_map(). From",
+      "https://naciscdn.org/naturalearth/50m/cultural/ne_50m_admin_0_countries.zip, Natural",
+      "Earth's public-domain map data, keeping the islands inside 165 to 179 degrees east and 48 to",
+      "34 degrees south.",
+      "",
+      "Columns: long and lat (a point of a ring's outline, in degrees, WGS84); group (the ring,",
+      "numbered across the map, each closed by its first point again); order (the point's place",
+      "across the map); region (\"New Zealand\"); subregion (NA)."
+    )
+  ),
+  list(
+    name = "nc",
+    data = nc_counties,
+    source = "sf 1.1.3's nc.shp, carried into WGS 84 by PROJ 9.8.1",
+    licence = "MIT",
+    about = c(
+      "nc: the 100 counties of North Carolina, with their births and sudden infant deaths in",
+      "1974-78 and 1979-84, as sf's nc.shp holds them, for geom_sf() and its kin. sf reads it",
+      "from a shapefile in NAD27 (EPSG 4267); here its outlines are carried into WGS 84 (EPSG",
+      "4326), as every GeoJSON geometry is, by a Helmert shift accurate to about 8 m.",
+      "",
+      "Columns: AREA and PERIMETER (in the shapefile's units); CNTY_ and CNTY_ID (county",
+      "numbers); NAME; FIPS (text) and FIPSNO (its number); CRESS_ID (a third county number);",
+      "BIR74, SID74 and NWBIR74 (births, sudden infant deaths and non-white births, 1974-78);",
+      "BIR79, SID79 and NWBIR79 (the same, 1979-84); geometry (the county's outline, a GeoJSON",
+      "MultiPolygon)."
+    )
   )
 )
 
@@ -278,6 +477,16 @@ shortest <- function(values) {
     if (is.na(value)) return("NA")
     written <- format(value, digits = 15, scientific = FALSE)
     if (as.numeric(written) == value) written else sprintf("%.17g", value)
+  }, character(1), USE.NAMES = FALSE)
+}
+
+# Each double in 17 significant digits, which always read back exactly: a map's outlines are
+# written so, since R's as.numeric() also misreads some 15-digit decimals, and shortest() trusts it.
+# A world outline's -87.06000342481789 was one, written "-87.0600034248179", which R reads back as
+# itself and a correct parser as the next double (the fingerprint's digest found it).
+exact <- function(values) {
+  vapply(values, function(value) {
+    if (is.na(value)) "NA" else sprintf("%.17g", value)
   }, character(1), USE.NAMES = FALSE)
 }
 
@@ -326,7 +535,9 @@ for (dataset in datasets) {
   out <- data
   for (column in names(out)) {
     values <- out[[column]]
-    if (is.double(values) && !inherits(values, "Date")) out[[column]] <- shortest(values)
+    if (is.double(values) && !inherits(values, "Date")) {
+      out[[column]] <- if (isTRUE(dataset$exact)) exact(values) else shortest(values)
+    }
   }
   quoted <- which(vapply(data, function(values) is.character(values) || is.factor(values),
                          logical(1)))
@@ -345,6 +556,19 @@ for (dataset in datasets) {
       sort(present)
     }
     ends <- function(at) if (length(sorted)) written(sorted[at]) else "NA"
+    # A geometry column is summed up by its geometries' types and its coordinates' digest, no
+    # order among shapes to give it a least or greatest.
+    if (inherits(values, "geojson")) {
+      type <- function(text) sub('^\\{"type":"([A-Za-z]+)".*', "\\1", text)
+      fingerprint[[length(fingerprint) + 1]] <- data.frame(
+        dataset = dataset$name, column = names(data)[index], position = index,
+        class = "geojson", rows = nrow(data), missing = sum(is.na(values)),
+        distinct = length(unique(present)), first = type(values[1]),
+        last = type(values[length(values)]), least = "NA", greatest = "NA", levels = "",
+        digest = geojson_digest(values), ordered = FALSE
+      )
+      next
+    }
     fingerprint[[length(fingerprint) + 1]] <- data.frame(
       dataset = dataset$name,
       column = names(data)[index],

@@ -1,6 +1,7 @@
 # GigDatasets
 
-Datasets to plot: copies of the tables R, ggplot2 and their packages ship, for the examples in
+Datasets to plot: copies of the tables R, ggplot2 and their packages ship, and map outlines from
+public-domain sources laid out as ggplot2's `map_data()` lays them, for the examples in
 [Giggly](https://github.com/giggleton/giggly)'s notebooks and for your own plots.
 
 Each dataset is a keyword list of plain columns, which Giggly, Explorer and Kino all read as a
@@ -37,12 +38,15 @@ are kept compressed and decoded when asked for.
 The code is MIT; see `LICENSE`. Each dataset carries its source's licence, which its file's header
 and its documentation name: ggplot2's datasets are MIT; R's own (`mtcars`, `faithful`,
 `USArrests`) and rpart's `kyphosis` are GPL-2.0 or GPL-3.0; nlme's `Oxboys` is GPL-2.0 or later;
-and ggplot2movies' `movies` is GPL-3.0. The package lists every licence its datasets carry,
+ggplot2movies' `movies` is GPL-3.0; and the map outlines (`state_map`, from the US Census Bureau,
+and `world_map` and `nz_map`, from Natural Earth) are in the public domain, which needs no licence
+listed; sf's `nc`, North Carolina's counties, is MIT. The package lists every licence its datasets carry,
 `LICENSES/` holds the GPL's two texts, and `THIRD_PARTY_NOTICES.md` says where each dataset comes
 from.
 
 ## Regenerating a dataset
 
 The files in `priv/datasets` and the fingerprint the tests check them against are written from R's
-own data by `dev/regenerate.R`, whose header gives the command. Only a maintainer changing a
+own data, and the map outlines from their sources' files, by `dev/regenerate.R`, whose header gives
+the command and where to download the outlines' files. Only a maintainer changing a
 dataset needs R; the package and its tests read only the committed files.
